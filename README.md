@@ -2,4 +2,4 @@
 This will display today's NBA results using go http request.
 
 ## Run
-Execute `go run hello.go`
+Execute `go run nba-result.go`
