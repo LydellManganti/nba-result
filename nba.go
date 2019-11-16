@@ -56,15 +56,21 @@ func GetDisplayHighlight(game Game) DisplayHighlight {
 	displayHighlight.Status = fmt.Sprintf("  Status    : %s\n", gameStatus[game.StatusNum])
 	displayHighlight.Home = fmt.Sprintf("  Home      : %s\n", game.HTeam.TriCode)
 	displayHighlight.Location = fmt.Sprintf("  Location  : %s, %s, %s\n", game.Arena.Name, game.Arena.City, game.Arena.StateAbbr)
+	hScore, _ := strconv.Atoi(game.HTeam.Score)
+	vScore, _ := strconv.Atoi(game.VTeam.Score)
 	if gameStatus[game.StatusNum] == "Finished" {
-		hScore, _ := strconv.Atoi(game.HTeam.Score)
-		vScore, _ := strconv.Atoi(game.VTeam.Score)
 		if hScore > vScore {
 			displayHighlight.Result = fmt.Sprintf("  %s win   : %s - %s\n", game.HTeam.TriCode, game.HTeam.Score, game.VTeam.Score)
 		} else {
 			displayHighlight.Result = fmt.Sprintf("  %s win   : %s - %s\n", game.VTeam.TriCode, game.VTeam.Score, game.HTeam.Score)
 		}
 		displayHighlight.Highlight = fmt.Sprintf("  Highlight : %s\n", game.Nugget.Text)
+	} else if gameStatus[game.StatusNum] == "In Progress" {
+		if hScore > vScore {
+			displayHighlight.Result = fmt.Sprintf("  %s leads : %s - %s\n", game.HTeam.TriCode, game.HTeam.Score, game.VTeam.Score)
+		} else {
+			displayHighlight.Result = fmt.Sprintf("  %s leads : %s - %s\n", game.VTeam.TriCode, game.VTeam.Score, game.HTeam.Score)
+		}
 	}
 	return displayHighlight
 }
