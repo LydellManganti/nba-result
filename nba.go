@@ -52,7 +52,7 @@ func GetTodaysSchedule(nba Nba) ([]string, ScoreBoard) {
 // GetDisplayHighlight Retrieve Highlight Information to be Displayed
 func GetDisplayHighlight(game Game) DisplayHighlight {
 	var displayHighlight DisplayHighlight
-	displayHighlight.Versus = fmt.Sprintf("%s vs %s\n", game.VTeam.TriCode, game.HTeam.TriCode)
+	displayHighlight.Versus = fmt.Sprintf("%s vs %s\n", game.HTeam.TriCode, game.VTeam.TriCode)
 	displayHighlight.Status = fmt.Sprintf("  Status    : %s\n", gameStatus[game.StatusNum])
 	displayHighlight.Home = fmt.Sprintf("  Home      : %s\n", game.HTeam.TriCode)
 	displayHighlight.Location = fmt.Sprintf("  Location  : %s, %s, %s\n", game.Arena.Name, game.Arena.City, game.Arena.StateAbbr)
@@ -75,6 +75,14 @@ func GetDisplayHighlight(game Game) DisplayHighlight {
 	return displayHighlight
 }
 
+func GetDisplayStandings(game Game) DisplayStandings {
+	var displayStandings DisplayStandings
+	displayStandings.Header = "Team Win Loss\n"
+	displayStandings.HomeTeam = fmt.Sprintf("%s   %s   %s\n", game.HTeam.TriCode, game.HTeam.Win, game.HTeam.Loss)
+	displayStandings.VisitorTeam = fmt.Sprintf("%s   %s   %s", game.VTeam.TriCode, game.VTeam.Win, game.VTeam.Loss)
+	return displayStandings
+}
+
 type DisplayHighlight struct {
 	Versus    string
 	Status    string
@@ -82,6 +90,12 @@ type DisplayHighlight struct {
 	Location  string
 	Result    string
 	Highlight string
+}
+
+type DisplayStandings struct {
+	Header      string
+	HomeTeam    string
+	VisitorTeam string
 }
 
 type Nba struct {
