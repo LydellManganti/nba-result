@@ -31,7 +31,7 @@ func GetNBAData() Nba {
 	return nba
 }
 
-func GetTodaysSchedule(nba Nba) ([]string, ScoreBoard) {
+func (nba Nba) GetTodaysSchedule() ([]string, ScoreBoard) {
 	var data []byte
 	response, err := http.Get(baseURL + nba.Links.TodayScoreboard)
 	if err != nil {
@@ -49,8 +49,22 @@ func GetTodaysSchedule(nba Nba) ([]string, ScoreBoard) {
 	return schedule, scoreBoard
 }
 
+func (game Game) GetTeamStats(anchorDate string) Boxscore {
+	var data []byte
+	response, err := http.Get(baseURL + fmt.Sprintf("/prod/v1/%s/%s_boxscore.json", anchorDate, game.GameId))
+	if err != nil {
+		fmt.Printf("The HTTP Request 101 failed with error %s\n", err)
+	} else {
+		data, _ = ioutil.ReadAll(response.Body)
+	}
+
+	var boxscore Boxscore
+	json.Unmarshal([]byte(data), &boxscore)
+	return boxscore
+}
+
 // GetDisplayHighlight Retrieve Highlight Information to be Displayed
-func GetDisplayHighlight(game Game) DisplayHighlight {
+func (game Game) GetDisplayHighlight() DisplayHighlight {
 	var displayHighlight DisplayHighlight
 	displayHighlight.Versus = fmt.Sprintf("%s vs %s\n", game.HTeam.TriCode, game.VTeam.TriCode)
 	displayHighlight.Status = fmt.Sprintf("  Status    : %s\n", gameStatus[game.StatusNum])
@@ -75,7 +89,7 @@ func GetDisplayHighlight(game Game) DisplayHighlight {
 	return displayHighlight
 }
 
-func GetDisplayStandings(game Game) DisplayStandings {
+func (game Game) GetDisplayStandings() DisplayStandings {
 	var displayStandings DisplayStandings
 	displayStandings.Header = "Team Win Loss\n"
 	displayStandings.HomeTeam = fmt.Sprintf("%s   %s   %s\n", game.HTeam.TriCode, game.HTeam.Win, game.HTeam.Loss)
@@ -103,6 +117,8 @@ type Nba struct {
 }
 
 type Links struct {
+	AnchorDate      string
+	Boxscore        string
 	TodayScoreboard string
 }
 
@@ -115,6 +131,7 @@ type Game struct {
 	VTeam     Team
 	HTeam     Team
 	Arena     Arena
+	GameId    string
 	Nugget    Nugget
 	StatusNum int
 }
@@ -134,4 +151,51 @@ type Arena struct {
 
 type Nugget struct {
 	Text string
+}
+
+type Boxscore struct {
+	BasicGameData BasicGameData
+	Stats         Stats
+}
+
+type BasicGameData struct {
+	GameId string
+}
+
+type Stats struct {
+	TimesTied   string
+	LeadChanges string
+	VTeam       TeamStat
+	HTeam       TeamStat
+}
+
+type TeamStat struct {
+	FastBreakPoints    string
+	PointsInPaint      string
+	BiggestLead        string
+	SecondChancePoints string
+	PointsOffTurnovers string
+	LongestRun         string
+	Totals             TeamTotals
+}
+
+type TeamTotals struct {
+	Points    string
+	FGM       string
+	FGA       string
+	FGP       string
+	FTM       string
+	FTA       string
+	FTP       string
+	TPM       string
+	TPA       string
+	TPP       string
+	OffReb    string
+	DefReb    string
+	TotReb    string
+	Assists   string
+	PFouls    string
+	Steals    string
+	Turnovers string
+	Blocks    string
 }
