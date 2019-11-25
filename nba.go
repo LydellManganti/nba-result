@@ -78,14 +78,16 @@ func (game Game) GetDisplayHighlight() DisplayHighlight {
 		} else {
 			displayHighlight.Result = fmt.Sprintf("  %s win   : %s - %s\n", game.VTeam.TriCode, game.VTeam.Score, game.HTeam.Score)
 		}
-		displayHighlight.Highlight = fmt.Sprintf("  Highlight : %s\n", game.Nugget.Text)
 	} else if gameStatus[game.StatusNum] == "In Progress" {
-		if hScore > vScore {
+		if hScore == vScore {
+			displayHighlight.Result = fmt.Sprintf("  Game Tied : %s - %s\n", game.HTeam.Score, game.VTeam.Score)
+		} else if hScore > vScore {
 			displayHighlight.Result = fmt.Sprintf("  %s leads : %s - %s\n", game.HTeam.TriCode, game.HTeam.Score, game.VTeam.Score)
 		} else {
 			displayHighlight.Result = fmt.Sprintf("  %s leads : %s - %s\n", game.VTeam.TriCode, game.VTeam.Score, game.HTeam.Score)
 		}
 	}
+	displayHighlight.Highlight = fmt.Sprintf("  Highlight : %s\n", game.Nugget.Text)
 	return displayHighlight
 }
 
@@ -133,14 +135,21 @@ type Game struct {
 	Arena     Arena
 	GameId    string
 	Nugget    Nugget
+	Period    Period
 	StatusNum int
+	Clock     string
 }
 
 type Team struct {
-	TriCode string
-	Win     string
-	Loss    string
-	Score   string
+	TriCode   string
+	Win       string
+	Loss      string
+	Score     string
+	LineScore []Score
+}
+
+type Score struct {
+	Score string
 }
 
 type Arena struct {
@@ -151,6 +160,12 @@ type Arena struct {
 
 type Nugget struct {
 	Text string
+}
+
+type Period struct {
+	Current       int
+	IsHalfTime    bool
+	IsEndOfPeriod bool
 }
 
 type Boxscore struct {
