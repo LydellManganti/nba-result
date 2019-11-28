@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -25,14 +26,17 @@ func main() {
 
 	uiSchedule := widgets.NewList()
 	uiSchedule.Title = "Today's Games"
+	uiSchedule.TitleStyle.Fg = ui.ColorClear
 	uiSchedule.Rows = schedule
-	uiSchedule.TextStyle = ui.NewStyle(ui.ColorWhite)
-	uiSchedule.WrapText = false
+	uiSchedule.TextStyle.Fg = ui.ColorWhite
+	uiSchedule.SelectedRowStyle.Fg = ui.ColorRed
+	uiSchedule.SelectedRowStyle.Bg = ui.ColorWhite
 	uiSchedule.BorderStyle.Fg = ui.ColorCyan
 	uiSchedule.SetRect(0, 0, 20, 40)
 
 	uiHighlight := widgets.NewParagraph()
 	uiHighlight.Title = "Highlights"
+	uiHighlight.TitleStyle.Fg = ui.ColorClear
 	uiHighlight.SetRect(21, 0, 90, 10)
 	uiHighlight.TextStyle.Fg = ui.ColorWhite
 	uiHighlight.BorderStyle.Fg = ui.ColorCyan
@@ -80,42 +84,53 @@ func main() {
 		uiQuarterScores.Text = "      1st  2nd  3rd  4th\n"
 		uiQuarterScores.Text = fmt.Sprintf("%s %s", uiQuarterScores.Text, game.HTeam.TriCode)
 		for _, score := range game.HTeam.LineScore {
-			uiQuarterScores.Text = fmt.Sprintf("%s  %s", uiQuarterScores.Text, addPrefixSpace(score.Score, 3))
+			uiQuarterScores.Text = fmt.Sprintf("%s  %s", uiQuarterScores.Text, addPrefixChar(score.Score, 3))
 		}
 		uiQuarterScores.Text = fmt.Sprintf("%s\n %s", uiQuarterScores.Text, game.VTeam.TriCode)
 		for _, score := range game.VTeam.LineScore {
-			uiQuarterScores.Text = fmt.Sprintf("%s  %s", uiQuarterScores.Text, addPrefixSpace(score.Score, 3))
+			uiQuarterScores.Text = fmt.Sprintf("%s  %s", uiQuarterScores.Text, addPrefixChar(score.Score, 3))
 		}
 	}
 
 	updateGameTime := func(game Game) {
 		if gameStatus[game.StatusNum] == "In Progress" {
-			uiGameTime.Text = fmt.Sprintf("\n Period: %s\n", strconv.Itoa(game.Period.Current))
-			uiGameTime.Text = fmt.Sprintf("%s Time  : %s", uiGameTime.Text, game.Clock)
+			if game.Period.IsHalfTime {
+				uiGameTime.Text = fmt.Sprintf("\n Halftime!")
+			} else {
+				uiGameTime.Text = fmt.Sprintf("\n Period: %s\n", strconv.Itoa(game.Period.Current))
+				uiGameTime.Text = fmt.Sprintf("%s Time  : %s", uiGameTime.Text, game.Clock)
+			}
+		} else if gameStatus[game.StatusNum] == "Not Started" {
+			usGameTime, err := time.Parse(time.RFC3339, game.StartTimeUTC)
+			if err != nil {
+				uiGameTime.Text = fmt.Sprintf("\n%s", err)
+			}
+			localGameTime := usGameTime.In(time.Local)
+			uiGameTime.Text = fmt.Sprintf("\n Starts at %s:%s\n", addPrefixChar(strconv.Itoa(localGameTime.Hour()), 2, "0"), addPrefixChar(strconv.Itoa(localGameTime.Minute()), 2, "0"))
 		} else {
-			uiGameTime.Text = ""
+			uiGameTime.Text = "\n Finished!"
 		}
 	}
 
 	updateTeamStatsWidget := func(game Game, boxscore Boxscore) {
-		uiTeamStats.Text = fmt.Sprintf("\n%s%s%s      Team Stats      %s%s\n\n", tenSpace, addPrefixSpace(game.HTeam.TriCode, 6), fifteenSpace, fifteenSpace, addSuffixSpace(game.VTeam.TriCode, 6))
+		uiTeamStats.Text = fmt.Sprintf("\n%s%s%s      Team Stats      %s%s\n\n", tenSpace, addPrefixChar(game.HTeam.TriCode, 6), fifteenSpace, fifteenSpace, addSuffixSpace(game.VTeam.TriCode, 6))
 		uiTeamStats.Text = fmt.Sprintf("%s%s%s\n", uiTeamStats.Text, tenSpace, strings.Repeat("=", 65))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s        Points        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.Points, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Points, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s       Rebounds       %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.TotReb, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.TotReb, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s       Assists        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.Assists, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Assists, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s        Blocks        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.Blocks, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Blocks, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s      Field Goal      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.FGM+"/"+boxscore.Stats.HTeam.Totals.FGA, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FGM+"/"+boxscore.Stats.VTeam.Totals.FGA, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s         FG %%         %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.FGP, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FGP, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s   3 Pt Field Goal    %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.TPM+"/"+boxscore.Stats.HTeam.Totals.TPA, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.TPM+"/"+boxscore.Stats.VTeam.Totals.TPA, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s      3 Pt FG %%       %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.TPP, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.TPP, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s      Free Throw      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.FTM+"/"+boxscore.Stats.HTeam.Totals.FTA, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FTM+"/"+boxscore.Stats.VTeam.Totals.FTA, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s         FT %%         %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.Totals.FTP, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FTP, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s  Fast Break Points   %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.FastBreakPoints, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.FastBreakPoints, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s   Points In Paint    %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.PointsInPaint, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.PointsInPaint, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s    Biggest Lead      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.BiggestLead, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.BiggestLead, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s Second Chance Points %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.SecondChancePoints, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.SecondChancePoints, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s Points Off Turnovers %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.PointsOffTurnovers, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.PointsOffTurnovers, 6))
-		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s     Longest Run      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixSpace(boxscore.Stats.HTeam.LongestRun, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.LongestRun, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s        Points        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.Points, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Points, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s       Rebounds       %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.TotReb, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.TotReb, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s       Assists        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.Assists, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Assists, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s        Blocks        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.Blocks, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Blocks, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s      Field Goal      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.FGM+"/"+boxscore.Stats.HTeam.Totals.FGA, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FGM+"/"+boxscore.Stats.VTeam.Totals.FGA, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s         FG %%         %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.FGP, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FGP, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s   3 Pt Field Goal    %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.TPM+"/"+boxscore.Stats.HTeam.Totals.TPA, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.TPM+"/"+boxscore.Stats.VTeam.Totals.TPA, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s      3 Pt FG %%       %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.TPP, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.TPP, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s      Free Throw      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.FTM+"/"+boxscore.Stats.HTeam.Totals.FTA, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FTM+"/"+boxscore.Stats.VTeam.Totals.FTA, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s         FT %%         %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.FTP, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.FTP, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s  Fast Break Points   %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.FastBreakPoints, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.FastBreakPoints, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s   Points In Paint    %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.PointsInPaint, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.PointsInPaint, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s    Biggest Lead      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.BiggestLead, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.BiggestLead, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s Second Chance Points %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.SecondChancePoints, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.SecondChancePoints, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s Points Off Turnovers %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.PointsOffTurnovers, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.PointsOffTurnovers, 6))
+		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s     Longest Run      %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.LongestRun, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.LongestRun, 6))
 	}
 
 	game := scoreBoard.Games[0]
@@ -213,8 +228,14 @@ func (game Game) retrieveBoxscoreData(boxscores []Boxscore) Boxscore {
 	return emptyBoxscore
 }
 
-func addPrefixSpace(s string, length int) string {
-	formattedString := strings.Repeat(" ", length) + s
+func addPrefixChar(s string, length int, charOptional ...string) string {
+	var char string
+	if len(charOptional) == 0 {
+		char = " "
+	} else {
+		char = charOptional[0]
+	}
+	formattedString := strings.Repeat(char, length) + s
 	return formattedString[len(formattedString)-length:]
 }
 

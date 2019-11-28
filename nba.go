@@ -44,7 +44,7 @@ func (nba Nba) GetTodaysSchedule() ([]string, ScoreBoard) {
 	json.Unmarshal([]byte(data), &scoreBoard)
 	var schedule []string
 	for _, game := range scoreBoard.Games {
-		schedule = append(schedule, "   ["+game.HTeam.TriCode+" vs "+game.VTeam.TriCode+"](fg:cyan)")
+		schedule = append(schedule, "    "+game.HTeam.TriCode+" vs "+game.VTeam.TriCode+"    ")
 	}
 	return schedule, scoreBoard
 }
@@ -130,14 +130,15 @@ type ScoreBoard struct {
 }
 
 type Game struct {
-	VTeam     Team
-	HTeam     Team
-	Arena     Arena
-	GameId    string
-	Nugget    Nugget
-	Period    Period
-	StatusNum int
-	Clock     string
+	VTeam        Team
+	HTeam        Team
+	Arena        Arena
+	GameId       string
+	Nugget       Nugget
+	Period       Period
+	StatusNum    int
+	Clock        string
+	StartTimeUTC string
 }
 
 type Team struct {
