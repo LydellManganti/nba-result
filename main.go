@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"nba-result/models"
+
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
@@ -14,9 +16,15 @@ import (
 var fifteenSpace = strings.Repeat(" ", 15)
 var tenSpace = strings.Repeat(" ", 10)
 
+var gameStatus = map[int]string{
+	1: "Not Started",
+	2: "In Progress",
+	3: "Finished",
+}
+
 func main() {
-	var boxscores []Boxscore
-	nba := GetNBAData()
+	var boxscores []models.Boxscore
+	nba := models.GetNBAData()
 	schedule, scoreBoard := nba.GetTodaysSchedule()
 
 	if err := ui.Init(); err != nil {
@@ -65,7 +73,7 @@ func main() {
 	uiTeamStats.SetRect(21, 40, 110, 17)
 	uiTeamStats.BorderStyle.Fg = ui.ColorCyan
 
-	updateHighlightWidget := func(displayHighlight DisplayHighlight) {
+	updateHighlightWidget := func(displayHighlight models.DisplayHighlight) {
 		uiHighlight.Text = displayHighlight.Versus + "\n"
 		uiHighlight.Text = fmt.Sprintf("%s%s", uiHighlight.Text, displayHighlight.Status)
 		uiHighlight.Text = fmt.Sprintf("%s%s", uiHighlight.Text, displayHighlight.Home)
@@ -74,13 +82,13 @@ func main() {
 		uiHighlight.Text = fmt.Sprintf("%s%s", uiHighlight.Text, displayHighlight.Highlight)
 	}
 
-	updateStandingsWidget := func(displayStandings DisplayStandings) {
+	updateStandingsWidget := func(displayStandings models.DisplayStandings) {
 		uiStandings.Text = displayStandings.Header + "\n"
 		uiStandings.Text = fmt.Sprintf("%s%s", uiStandings.Text, displayStandings.HomeTeam)
 		uiStandings.Text = fmt.Sprintf("%s%s", uiStandings.Text, displayStandings.VisitorTeam)
 	}
 
-	updateQuarterScoresWidget := func(game Game) {
+	updateQuarterScoresWidget := func(game models.Game) {
 		uiQuarterScores.Text = "      1st  2nd  3rd  4th\n"
 		uiQuarterScores.Text = fmt.Sprintf("%s %s", uiQuarterScores.Text, game.HTeam.TriCode)
 		for _, score := range game.HTeam.LineScore {
@@ -92,7 +100,7 @@ func main() {
 		}
 	}
 
-	updateGameTime := func(game Game) {
+	updateGameTime := func(game models.Game) {
 		if gameStatus[game.StatusNum] == "In Progress" {
 			if game.Period.IsHalfTime {
 				uiGameTime.Text = fmt.Sprintf("\n Halftime!")
@@ -112,7 +120,7 @@ func main() {
 		}
 	}
 
-	updateTeamStatsWidget := func(game Game, boxscore Boxscore) {
+	updateTeamStatsWidget := func(game models.Game, boxscore models.Boxscore) {
 		uiTeamStats.Text = fmt.Sprintf("\n%s%s%s      Team Stats      %s%s\n\n", tenSpace, addPrefixChar(game.HTeam.TriCode, 6), fifteenSpace, fifteenSpace, addSuffixSpace(game.VTeam.TriCode, 6))
 		uiTeamStats.Text = fmt.Sprintf("%s%s%s\n", uiTeamStats.Text, tenSpace, strings.Repeat("=", 65))
 		uiTeamStats.Text = fmt.Sprintf("%s%s%s%s        Points        %s%s\n", uiTeamStats.Text, tenSpace, addPrefixChar(boxscore.Stats.HTeam.Totals.Points, 6), fifteenSpace, fifteenSpace, addSuffixSpace(boxscore.Stats.VTeam.Totals.Points, 6))
@@ -155,8 +163,8 @@ func main() {
 		case "j", "<Down>":
 			uiSchedule.ScrollDown()
 			game := scoreBoard.Games[uiSchedule.SelectedRow]
-			if game.isBoxscoreDataRetrieved(boxscores) {
-				boxscore = game.retrieveBoxscoreData(boxscores)
+			if game.IsBoxscoreDataRetrieved(boxscores) {
+				boxscore = game.RetrieveBoxscoreData(boxscores)
 			} else {
 				boxscore = game.GetTeamStats(nba.Links.AnchorDate)
 				boxscores = append(boxscores, boxscore)
@@ -171,8 +179,8 @@ func main() {
 		case "k", "<Up>":
 			uiSchedule.ScrollUp()
 			game := scoreBoard.Games[uiSchedule.SelectedRow]
-			if game.isBoxscoreDataRetrieved(boxscores) {
-				boxscore = game.retrieveBoxscoreData(boxscores)
+			if game.IsBoxscoreDataRetrieved(boxscores) {
+				boxscore = game.RetrieveBoxscoreData(boxscores)
 			} else {
 				boxscore = game.GetTeamStats(nba.Links.AnchorDate)
 				boxscores = append(boxscores, boxscore)
@@ -187,7 +195,7 @@ func main() {
 		case "r":
 			schedule, scoreBoard = nba.GetTodaysSchedule()
 			game := scoreBoard.Games[uiSchedule.SelectedRow]
-			var emptyBoxscores []Boxscore
+			var emptyBoxscores []models.Boxscore
 			boxscore = game.GetTeamStats(nba.Links.AnchorDate)
 			boxscores = append(emptyBoxscores, boxscore)
 			highlightInformation := game.GetDisplayHighlight()
@@ -207,25 +215,6 @@ func main() {
 
 		ui.Render(uiSchedule, uiHighlight, uiStandings, uiQuarterScores, uiGameTime, uiTeamStats)
 	}
-}
-
-func (game Game) isBoxscoreDataRetrieved(boxscores []Boxscore) bool {
-	for _, boxscore := range boxscores {
-		if boxscore.BasicGameData.GameId == game.GameId {
-			return true
-		}
-	}
-	return false
-}
-
-func (game Game) retrieveBoxscoreData(boxscores []Boxscore) Boxscore {
-	for _, boxscore := range boxscores {
-		if boxscore.BasicGameData.GameId == game.GameId {
-			return boxscore
-		}
-	}
-	var emptyBoxscore Boxscore
-	return emptyBoxscore
 }
 
 func addPrefixChar(s string, length int, charOptional ...string) string {
