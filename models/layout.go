@@ -234,6 +234,9 @@ func (ls *layoutService) UpdateTeamStatsWidget(ts *widgets.Paragraph, g Game, b 
 }
 
 func (ls *layoutService) UpdateBoxScoreWidget(bs *widgets.Paragraph, g Game, b Boxscore) {
+	if len(b.Stats.ActivePlayers) == 0 {
+		return
+	}
 	starterCnt := 0
 	awayStats := ""
 	homeStats := ""
