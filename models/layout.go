@@ -78,35 +78,45 @@ func (ls *layoutService) Initialise() *Layout {
 func (ls *layoutService) GetDisplayHighlight(g Game) DisplayHighlight {
 	var displayHighlight DisplayHighlight
 	displayHighlight.Versus = fmt.Sprintf("%s vs %s\n", g.HTeam.TriCode, g.VTeam.TriCode)
-	displayHighlight.Status = fmt.Sprintf("  Status    : %s\n", gameStatus[g.StatusNum])
-	displayHighlight.Home = fmt.Sprintf("  Home      : %s\n", g.HTeam.TriCode)
-	displayHighlight.Location = fmt.Sprintf("  Location  : %s, %s, %s\n", g.Arena.Name, g.Arena.City, g.Arena.StateAbbr)
+	displayHighlight.Status = fmt.Sprintf(" Status    : %s\n", gameStatus[g.StatusNum])
+	displayHighlight.Home = fmt.Sprintf(" Home      : %s\n", g.HTeam.TriCode)
+	displayHighlight.Location = fmt.Sprintf(" Location  : %s, %s, %s\n", g.Arena.Name, g.Arena.City, g.Arena.StateAbbr)
 	hScore, _ := strconv.Atoi(g.HTeam.Score)
 	vScore, _ := strconv.Atoi(g.VTeam.Score)
 	if gameStatus[g.StatusNum] == "Finished" {
 		if hScore > vScore {
-			displayHighlight.Result = fmt.Sprintf("  %s win   : %s - %s\n", g.HTeam.TriCode, g.HTeam.Score, g.VTeam.Score)
+			displayHighlight.Result = fmt.Sprintf(" %s win   : %s - %s\n", g.HTeam.TriCode, g.HTeam.Score, g.VTeam.Score)
 		} else {
-			displayHighlight.Result = fmt.Sprintf("  %s win   : %s - %s\n", g.VTeam.TriCode, g.VTeam.Score, g.HTeam.Score)
+			displayHighlight.Result = fmt.Sprintf(" %s win   : %s - %s\n", g.VTeam.TriCode, g.VTeam.Score, g.HTeam.Score)
 		}
 	} else if gameStatus[g.StatusNum] == "In Progress" {
 		if hScore == vScore {
-			displayHighlight.Result = fmt.Sprintf("  Game Tied : %s - %s\n", g.HTeam.Score, g.VTeam.Score)
+			displayHighlight.Result = fmt.Sprintf(" Game Tied : %s - %s\n", g.HTeam.Score, g.VTeam.Score)
 		} else if hScore > vScore {
-			displayHighlight.Result = fmt.Sprintf("  %s leads : %s - %s\n", g.HTeam.TriCode, g.HTeam.Score, g.VTeam.Score)
+			displayHighlight.Result = fmt.Sprintf(" %s leads : %s - %s\n", g.HTeam.TriCode, g.HTeam.Score, g.VTeam.Score)
 		} else {
-			displayHighlight.Result = fmt.Sprintf("  %s leads : %s - %s\n", g.VTeam.TriCode, g.VTeam.Score, g.HTeam.Score)
+			displayHighlight.Result = fmt.Sprintf(" %s leads : %s - %s\n", g.VTeam.TriCode, g.VTeam.Score, g.HTeam.Score)
 		}
 	}
-	displayHighlight.Highlight = fmt.Sprintf("  Highlight : %s\n", g.Nugget.Text)
+	highlights := strings.Split(g.Nugget.Text, "|")
+	var h string
+	for i, each := range highlights {
+		if i == 0 {
+			h = fmt.Sprintf(" Highlight : %s\n", strings.TrimSpace(each))
+		} else {
+			h = fmt.Sprintf("%s%s%s\n", h, strings.Repeat(" ", 12), each)
+		}
+	}
+
+	displayHighlight.Highlight = fmt.Sprintf(h)
 	return displayHighlight
 }
 
 func (ls *layoutService) GetDisplayStandings(g Game) DisplayStandings {
 	var displayStandings DisplayStandings
-	displayStandings.Header = "Team Win Loss\n"
-	displayStandings.HomeTeam = fmt.Sprintf("%s   %s   %s\n", g.HTeam.TriCode, g.HTeam.Win, g.HTeam.Loss)
-	displayStandings.VisitorTeam = fmt.Sprintf("%s   %s   %s", g.VTeam.TriCode, g.VTeam.Win, g.VTeam.Loss)
+	displayStandings.Header = "Team  Win  Loss\n"
+	displayStandings.HomeTeam = fmt.Sprintf(" %s   %s   %s\n", g.HTeam.TriCode, g.HTeam.Win, g.HTeam.Loss)
+	displayStandings.VisitorTeam = fmt.Sprintf(" %s   %s   %s", g.VTeam.TriCode, g.VTeam.Win, g.VTeam.Loss)
 	return displayStandings
 }
 
@@ -125,28 +135,28 @@ func (ls *layoutService) SetHighlight(h *widgets.Paragraph) {
 	h.TitleStyle.Fg = ui.ColorClear
 	h.TextStyle.Fg = ui.ColorWhite
 	h.BorderStyle.Fg = ui.ColorCyan
-	h.SetRect(21, 0, 90, 10)
+	h.SetRect(21, 0, 90, 11)
 }
 
 func (ls *layoutService) SetStandings(s *widgets.Paragraph) {
 	s.Title = "Standings"
 	s.TextStyle.Fg = ui.ColorWhite
 	s.BorderStyle.Fg = ui.ColorCyan
-	s.SetRect(91, 0, 110, 10)
+	s.SetRect(91, 0, 110, 11)
 }
 
 func (ls *layoutService) SetQuarterScores(q *widgets.Paragraph) {
 	q.Title = "Quarter Scores"
 	q.TextStyle.Fg = ui.ColorWhite
 	q.BorderStyle.Fg = ui.ColorCyan
-	q.SetRect(21, 10, 90, 17)
+	q.SetRect(21, 11, 90, 17)
 }
 
 func (ls *layoutService) SetGameTime(g *widgets.Paragraph) {
 	g.Title = "Game Time"
 	g.TextStyle.Fg = ui.ColorWhite
 	g.BorderStyle.Fg = ui.ColorCyan
-	g.SetRect(91, 10, 110, 17)
+	g.SetRect(91, 11, 110, 17)
 }
 
 func (ls *layoutService) SetTeamStats(t *widgets.Paragraph) {
@@ -244,10 +254,11 @@ func (ls *layoutService) UpdateBoxScoreWidget(bs *widgets.Paragraph, g Game, b B
 	stats := getBoxScoreHeader(g, teamID)
 	for _, p := range b.Stats.ActivePlayers {
 		if starterCnt == 5 {
-			stats = fmt.Sprintf("%s%s\n", stats, strings.Repeat("=", 106))
+			stats = fmt.Sprintf("%s%s\n", stats, strings.Repeat("-", 107))
 		}
 		if teamID != p.TeamID {
 			teamID = p.TeamID
+			stats = stats + getBoxScoreTotal(g, b.Stats.VTeam.Totals)
 			awayStats = stats
 			stats = getBoxScoreHeader(g, teamID)
 			starterCnt = 0
@@ -279,6 +290,7 @@ func (ls *layoutService) UpdateBoxScoreWidget(bs *widgets.Paragraph, g Game, b B
 		}
 		starterCnt++
 	}
+	stats = stats + getBoxScoreTotal(g, b.Stats.HTeam.Totals)
 	homeStats = stats
 	bs.Text = fmt.Sprintf("%s\n\n%s", homeStats, awayStats)
 }
@@ -288,8 +300,26 @@ func getBoxScoreHeader(g Game, teamID string) string {
 	if teamID == g.HTeam.TeamID {
 		team = g.HTeam.TriCode
 	}
-	header := fmt.Sprintf("STARTERS - %s                In   MIN     FG    3PT     FT  OREB  DREB REB AST STL BLK  TO  PF +/- PTS\n%s\n", team, strings.Repeat("=", 106))
+	header := fmt.Sprintf("STARTERS - %s                In   MIN     FG    3PT     FT  OREB  DREB REB AST STL BLK  TO  PF +/- PTS\n%s\n", team, strings.Repeat("-", 107))
 	return header
+}
+
+func getBoxScoreTotal(g Game, t TeamTotals) string {
+	fg := addPrefixChar(fmt.Sprintf("%s-%s", t.FGM, t.FGA), 40)
+	tg := addPrefixChar(fmt.Sprintf("%s-%s", t.TPM, t.TPA), 6)
+	ftg := addPrefixChar(fmt.Sprintf("%s-%s", t.FTM, t.FTA), 6)
+	or := addPrefixChar(t.OffReb, 5)
+	dr := addPrefixChar(t.DefReb, 5)
+	tr := addPrefixChar(t.TotReb, 3)
+	a := addPrefixChar(t.Assists, 3)
+	s := addPrefixChar(t.Steals, 3)
+	b := addPrefixChar(t.Blocks, 3)
+	to := addPrefixChar(t.Turnovers, 3)
+	pf := addPrefixChar(t.PFouls, 3)
+	pts := addPrefixChar(t.Points, 7)
+	total := fmt.Sprintf("%s\n", strings.Repeat("=", 107))
+	total = fmt.Sprintf("%s%s %s %s %s %s %s %s %s %s %s %s %s %s\n", total, "TEAM", fg, tg, ftg, or, dr, tr, a, s, b, to, pf, pts)
+	return total
 }
 
 func addPrefixChar(s string, length int, charOptional ...string) string {
