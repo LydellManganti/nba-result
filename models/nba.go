@@ -39,6 +39,7 @@ type DisplayHighlight struct {
 type DisplayStandings struct {
 	Header      string
 	HomeTeam    string
+	Playoffs    string
 	VisitorTeam string
 }
 
@@ -54,6 +55,7 @@ type Game struct {
 	GameId       string
 	Nugget       Nugget
 	Period       Period
+	Playoffs     Playoffs
 	StatusNum    int
 	Clock        string
 	StartTimeUTC string
@@ -86,6 +88,12 @@ type Period struct {
 	Current       int
 	IsHalfTime    bool
 	IsEndOfPeriod bool
+}
+
+type Playoffs struct {
+	RoundNum          string
+	ConfName          string
+	SeriesSummaryText string
 }
 
 type Boxscore struct {

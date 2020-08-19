@@ -116,7 +116,11 @@ func (ls *layoutService) GetDisplayStandings(g Game) DisplayStandings {
 	var displayStandings DisplayStandings
 	displayStandings.Header = "Team  Win  Loss\n"
 	displayStandings.HomeTeam = fmt.Sprintf(" %s   %s   %s\n", g.HTeam.TriCode, g.HTeam.Win, g.HTeam.Loss)
-	displayStandings.VisitorTeam = fmt.Sprintf(" %s   %s   %s", g.VTeam.TriCode, g.VTeam.Win, g.VTeam.Loss)
+	displayStandings.VisitorTeam = fmt.Sprintf(" %s   %s   %s\n\n", g.VTeam.TriCode, g.VTeam.Win, g.VTeam.Loss)
+	if g.Playoffs != (Playoffs{}) {
+		displayStandings.Playoffs = fmt.Sprintf(" %s - Round %s\n\n %s", g.Playoffs.ConfName, g.Playoffs.RoundNum, g.Playoffs.SeriesSummaryText)
+	}
+
 	return displayStandings
 }
 
@@ -188,6 +192,7 @@ func (ls *layoutService) UpdateStandingsWidget(s *widgets.Paragraph, d DisplaySt
 	s.Text = d.Header + "\n"
 	s.Text = fmt.Sprintf("%s%s", s.Text, d.HomeTeam)
 	s.Text = fmt.Sprintf("%s%s", s.Text, d.VisitorTeam)
+	s.Text = fmt.Sprintf("%s%s", s.Text, d.Playoffs)
 }
 
 func (ls *layoutService) UpdateQuarterScoresWidget(q *widgets.Paragraph, g Game) {
